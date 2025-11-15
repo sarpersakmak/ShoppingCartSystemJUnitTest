@@ -1,0 +1,37 @@
+@startuml
+title Online Shopping Cart - Class Diagram
+
+package com.example.shopping {
+  class Product {
+    - int id
+    - String name
+    - double price
+    - int stock
+    + Product(int, String, double, int)
+    + int getId()
+    + String getName()
+    + double getPrice()
+    + int getStock()
+    + void reduceStock(int)
+    + void increaseStock(int)
+  }
+
+  class ShoppingCart {
+    - Map<Product, Integer> items
+    + void addItem(Product, int)
+    + void removeItem(Product, int)
+    + double getTotalPrice()
+    + boolean isEmpty()
+    + Map<Product,Integer> getItems()
+    + void clear()
+  }
+
+  class OrderCalculator {
+    + static double calculate(double subtotal, double discountPercent, double taxPercent)
+  }
+
+  ShoppingCart "1" *-- "0..*" Product : contains
+  OrderCalculator ..> ShoppingCart : reads subtotal (utility)
+}
+
+@enduml
