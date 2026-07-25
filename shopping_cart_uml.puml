@@ -1,37 +1,39 @@
 @startuml
-title Online Shopping Cart - Class Diagram
+title Shopping Cart System - Class Diagram
+
+skinparam classAttributeIconSize 0
 
 package com.example.shopping {
-  class Product {
-    - int id
-    - String name
-    - double price
-    - int stock
-    + Product(int, String, double, int)
-    + int getId()
-    + String getName()
-    + double getPrice()
-    + int getStock()
-    + void reduceStock(int)
-    + void increaseStock(int)
-  }
+    class Product {
+        - id: int
+        - name: String
+        - price: double
+        - stock: int
+        + Product(id: int, name: String, price: double, stock: int)
+        + getId(): int
+        + getName(): String
+        + getPrice(): double
+        + getStock(): int
+        + setPrice(price: double): void
+        + reduceStock(amount: int): void
+        + increaseStock(amount: int): void
+    }
 
-  class ShoppingCart {
-    - Map<Product, Integer> items
-    + void addItem(Product, int)
-    + void removeItem(Product, int)
-    + double getTotalPrice()
-    + boolean isEmpty()
-    + Map<Product,Integer> getItems()
-    + void clear()
-  }
+    class ShoppingCart {
+        - items: Map<Product, Integer>
+        + addItem(product: Product, quantity: int): void
+        + removeItem(product: Product, quantity: int): void
+        + getTotalPrice(): double
+        + isEmpty(): boolean
+        + getItems(): Map<Product, Integer>
+        + clear(): void
+    }
 
-  class OrderCalculator {
-    + static double calculate(double subtotal, double discountPercent, double taxPercent)
-  }
+    class OrderCalculator <<utility>> {
+        + {static} calculate(subtotal: double, discountPercent: double, taxPercent: double): double
+    }
 
-  ShoppingCart "1" *-- "0..*" Product : contains
-  OrderCalculator ..> ShoppingCart : reads subtotal (utility)
+    ShoppingCart "1" o-- "0..*" Product : reserves
+    OrderCalculator ..> ShoppingCart : accepts subtotal from
 }
-
 @enduml
