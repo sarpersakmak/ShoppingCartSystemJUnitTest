@@ -1,142 +1,212 @@
 package com.example.shopping;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Map;
+
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/**
- * ShoppingCartTest
- * ----------------------------------------------------------
- * Tests for ShoppingCart class.
- *
- * - 11 unique tests in total.
- * - Covers valid and invalid operations,
- *   stock updates, and percentage-based calculations.
- * - Uses assertEquals, assertTrue,  assertThrows.
- */
-public class ShoppingCartTest {
+@DisplayName("Shopping cart")
+class ShoppingCartTest {
 
-    // --- Cart creation and adding items ---
+    private static final double TOLERANCE = 0.001;
 
-    /** A new cart should be empty. */
     @Test
-    public void newCart_isInitiallyEmpty() {
+    @DisplayName("starts empty")
+    void newCart_isEmpty() {
         ShoppingCart cart = new ShoppingCart();
-        assertTrue(cart.isEmpty());
+
+        assertAll(
+                () -> assertTrue(cart.isEmpty()),
+                () -> assertEquals(0, cart.getTotalPrice(), TOLERANCE));
     }
 
-    /** Adding valid items should update stock and total price. */
     @Test
-    public void addItem_validProduct_reducesStockAndAdds() {
-        Product p = new Product(1, "Book", 10, 5);
+    @DisplayName("adds a product and reserves stock")
+    void addItem_validProduct_addsQuantityAndReducesStock() {
+        Product product = new Product(1, "Book", 10, 5);
         ShoppingCart cart = new ShoppingCart();
-        cart.addItem(p, 2);
-        assertEquals(3, p.getStock());                 // 5 - 2 = 3
-        assertEquals(20, cart.getTotalPrice(), 0.001); // 2 * 10
+
+        cart.addItem(product, 2);
+
+        assertAll(
+                () -> assertFalse(cart.isEmpty()),
+                () -> assertEquals(2, cart.getItems().get(product).intValue()),
+                () -> assertEquals(3, product.getStock()),
+                () -> assertEquals(20, cart.getTotalPrice(), TOLERANCE));
     }
 
-    /** Null product should cause exception. */
     @Test
-    public void addItem_nullProduct_throws() {
+    @DisplayName("accumulates repeated additions of the same product")
+    void addItem_sameProductTwice_accumulatesQuantity() {
+        Product product = new Product(1, "Book", 10, 10);
         ShoppingCart cart = new ShoppingCart();
+
+        cart.addItem(product, 2);
+        cart.addItem(product, 3);
+
+        assertAll(
+                () -> assertEquals(5, cart.getItems().get(product).intValue()),
+                () -> assertEquals(5, product.getStock()));
+    }
+
+    @Test
+    @DisplayName("rejects a null product")
+    void addItem_nullProduct_throwsException() {
+        ShoppingCart cart = new ShoppingCart();
+
         assertThrows(IllegalArgumentException.class, () -> cart.addItem(null, 1));
     }
 
-    /** Zero quantity should not be allowed. */
     @Test
-    public void addItem_zeroQuantity_throws() {
-        Product p = new Product(1, "Pen", 1.0, 5);
+    @DisplayName("rejects non-positive quantities")
+    void addItem_nonPositiveQuantity_throwsException() {
+        Product product = new Product(1, "Pen", 1.0, 5);
         ShoppingCart cart = new ShoppingCart();
-        assertThrows(IllegalArgumentException.class, () -> cart.addItem(p, 0));
+
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> cart.addItem(product, 0)),
+                () -> assertThrows(IllegalArgumentException.class, () -> cart.addItem(product, -1)));
     }
 
-    /** Adding more than available stock should fail. */
     @Test
-    public void addItem_exceedStock_throws() {
-        Product p = new Product(1, "Laptop", 1000, 1);
+    @DisplayName("rejects a quantity greater than available stock")
+    void addItem_excessiveQuantity_throwsWithoutChangingState() {
+        Product product = new Product(1, "Laptop", 1000, 1);
         ShoppingCart cart = new ShoppingCart();
-        assertThrows(IllegalArgumentException.class, () -> cart.addItem(p, 2));
+
+        assertThrows(IllegalArgumentException.class, () -> cart.addItem(product, 2));
+        assertAll(
+                () -> assertTrue(cart.isEmpty()),
+                () -> assertEquals(1, product.getStock()));
     }
 
-    // --- Removing items from cart ---
-
-    /** Removing item should restore stock. */
     @Test
-    public void removeItem_valid_returnsStock() {
-        Product p = new Product(1, "Lamp", 5, 5);
+    @DisplayName("removes part of a quantity and restores stock")
+    void removeItem_partialQuantity_updatesCartAndStock() {
+        Product product = new Product(1, "Lamp", 5, 5);
         ShoppingCart cart = new ShoppingCart();
-        cart.addItem(p, 2);
-        cart.removeItem(p, 1);
-        assertEquals(4, p.getStock()); // one returned
+        cart.addItem(product, 2);
+
+        cart.removeItem(product, 1);
+
+        assertAll(
+                () -> assertEquals(1, cart.getItems().get(product).intValue()),
+                () -> assertEquals(4, product.getStock()));
     }
 
-    /** Removing all quantity removes the item completely from cart. */
     @Test
-    public void removeItem_allQuantity_removesFromCart() {
-        Product p = new Product(1, "Chair", 50, 2);
+    @DisplayName("removes a product when its full cart quantity is returned")
+    void removeItem_fullQuantity_removesProduct() {
+        Product product = new Product(1, "Chair", 50, 2);
         ShoppingCart cart = new ShoppingCart();
-        cart.addItem(p, 2);
-        cart.removeItem(p, 2);
-        assertTrue(cart.isEmpty());
+        cart.addItem(product, 2);
+
+        cart.removeItem(product, 2);
+
+        assertAll(
+                () -> assertTrue(cart.isEmpty()),
+                () -> assertEquals(2, product.getStock()));
     }
 
-    /** Removing item not in the cart should throw. */
     @Test
-    public void removeItem_notInCart_throws() {
+    @DisplayName("rejects removing a null product")
+    void removeItem_nullProduct_throwsException() {
         ShoppingCart cart = new ShoppingCart();
-        Product p = new Product(1, "Desk", 100, 5);
-        assertThrows(IllegalArgumentException.class, () -> cart.removeItem(p, 1));
+
+        assertThrows(IllegalArgumentException.class, () -> cart.removeItem(null, 1));
     }
 
-    /** Removing more than quantity in cart should fail. */
     @Test
-    public void removeItem_moreThanInCart_throws() {
-        Product p = new Product(1, "Toy", 10, 5);
+    @DisplayName("rejects removing a product not in the cart")
+    void removeItem_missingProduct_throwsException() {
         ShoppingCart cart = new ShoppingCart();
-        cart.addItem(p, 2);
-        assertThrows(IllegalArgumentException.class, () -> cart.removeItem(p, 3));
+        Product product = new Product(1, "Desk", 100, 5);
+
+        assertThrows(IllegalArgumentException.class, () -> cart.removeItem(product, 1));
     }
 
-    // --- Totals and clearing ---
-
-    /** Total price should sum multiple products correctly. */
     @Test
-    public void getTotalPrice_multipleProducts_correctSum() {
-        Product a = new Product(1, "A", 10, 10);
-        Product b = new Product(2, "B", 20, 10);
+    @DisplayName("rejects non-positive removal quantities")
+    void removeItem_nonPositiveQuantity_throwsException() {
+        Product product = new Product(1, "Toy", 10, 5);
         ShoppingCart cart = new ShoppingCart();
-        cart.addItem(a, 2);
-        cart.addItem(b, 3);
-        assertEquals(2 * 10 + 3 * 20, cart.getTotalPrice(), 0.001);
+        cart.addItem(product, 2);
+
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> cart.removeItem(product, 0)),
+                () -> assertThrows(IllegalArgumentException.class, () -> cart.removeItem(product, -1)));
     }
 
-    /** Clearing the cart should return all stock. */
     @Test
-    public void clear_returnsStock() {
-        Product p = new Product(1, "TV", 100, 3);
+    @DisplayName("rejects removing more than the cart contains")
+    void removeItem_excessiveQuantity_throwsWithoutChangingState() {
+        Product product = new Product(1, "Toy", 10, 5);
         ShoppingCart cart = new ShoppingCart();
-        cart.addItem(p, 2);
+        cart.addItem(product, 2);
+
+        assertThrows(IllegalArgumentException.class, () -> cart.removeItem(product, 3));
+        assertAll(
+                () -> assertEquals(2, cart.getItems().get(product).intValue()),
+                () -> assertEquals(3, product.getStock()));
+    }
+
+    @Test
+    @DisplayName("sums multiple products")
+    void getTotalPrice_multipleProducts_returnsCorrectSubtotal() {
+        Product first = new Product(1, "A", 10, 10);
+        Product second = new Product(2, "B", 20, 10);
+        ShoppingCart cart = new ShoppingCart();
+
+        cart.addItem(first, 2);
+        cart.addItem(second, 3);
+
+        assertEquals(80, cart.getTotalPrice(), TOLERANCE);
+    }
+
+    @Test
+    @DisplayName("supports floating-point totals with a tolerance")
+    void getTotalPrice_fractionalPrice_returnsExpectedSubtotal() {
+        Product product = new Product(1, "Cable", 0.3333, 10);
+        ShoppingCart cart = new ShoppingCart();
+
+        cart.addItem(product, 3);
+
+        assertEquals(0.9999, cart.getTotalPrice(), TOLERANCE);
+    }
+
+    @Test
+    @DisplayName("exposes cart contents as read-only")
+    void getItems_externalModification_throwsException() {
+        Product product = new Product(1, "Book", 10, 5);
+        ShoppingCart cart = new ShoppingCart();
+        cart.addItem(product, 1);
+        Map<Product, Integer> readOnlyItems = cart.getItems();
+
+        assertThrows(UnsupportedOperationException.class, () -> readOnlyItems.put(product, 99));
+        assertEquals(1, cart.getItems().get(product).intValue());
+    }
+
+    @Test
+    @DisplayName("clears all products and restores their stock")
+    void clear_multipleProducts_restoresStockAndEmptiesCart() {
+        Product first = new Product(1, "TV", 100, 3);
+        Product second = new Product(2, "Cable", 10, 8);
+        ShoppingCart cart = new ShoppingCart();
+        cart.addItem(first, 2);
+        cart.addItem(second, 5);
+
         cart.clear();
-        assertEquals(3, p.getStock()); // stock restored
-        assertTrue(cart.isEmpty());
-    }
-    /** Floating point tolerance: small rounding differences accepted. */
-    @Test
-    public void floatingPointTotals_toleranceCheck() {
-        Product p = new Product(1, "Cable", 0.3333, 10);
-        ShoppingCart cart = new ShoppingCart();
-        cart.addItem(p, 3);
-        assertEquals(0.9999, cart.getTotalPrice(), 0.001);
-    }
 
-    /** Adding the same product twice should accumulate quantities. */
-    @Test
-    public void addSameProductTwice_accumulatesQuantities() {
-        Product p = new Product(1, "Book", 10, 10);
-        ShoppingCart cart = new ShoppingCart();
-        cart.addItem(p, 2);
-        cart.addItem(p, 3);
-        assertEquals(5, cart.getItems().get(p));
+        assertAll(
+                () -> assertTrue(cart.isEmpty()),
+                () -> assertEquals(3, first.getStock()),
+                () -> assertEquals(8, second.getStock()),
+                () -> assertEquals(0, cart.getTotalPrice(), TOLERANCE));
     }
-
-
 }
