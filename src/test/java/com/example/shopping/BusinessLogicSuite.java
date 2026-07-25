@@ -4,18 +4,10 @@ import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 /**
- * BusinessLogicSuite (İş Mantığı Test Takımı)
- * ----------------------------------------------------------
- * Projenin iş mantığı ve operasyonel sınıflarına ait testleri çalıştırır.
- * * İçerdiği Testler:
- * - ShoppingCartTest
- * - OrderCalculatorTest
+ * Runs tests for cart operations and order-total calculations.
  */
 @Suite
-@SelectClasses({ 
-    ShoppingCartTest.class, 
-    OrderCalculatorTest.class 
-})
+@SelectClasses({ShoppingCartTest.class, OrderCalculatorTest.class})
 public class BusinessLogicSuite {
-   
+    // JUnit Platform discovers the selected test classes through annotations.
 }
