@@ -1,178 +1,164 @@
 package com.example.shopping;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/**
- * ProductTest
- * ----------------------------------------------------------
- * Contains 20 test cases that validate the Product class.
- * Covers constructor validation, stock management,
- * setter methods, and edge cases.
- *
- * Uses 5+ different assertions:
- *   - assertEquals
- *   - assertTrue
- *   - assertNotNull
- *   - assertThrows
- *   - assertDoesNotThrow
- *
- * Each test checks a unique behavior or boundary condition.
- */
-public class ProductTest {
+@DisplayName("Product")
+class ProductTest {
 
-    // --- Constructor validation tests ---
+    private static final double TOLERANCE = 0.001;
 
-    /** Valid product creation should correctly store all fields. */
     @Test
-    public void validProductCreation_shouldStoreFields() {
-        Product p = new Product(1, "Lamp", 10.0, 5);
-        assertNotNull(p);                              // Object created successfully
-        assertEquals("Lamp", p.getName());             // Correct name
-        assertEquals(10.0, p.getPrice(), 0.001);       // Correct price
-        assertEquals(5, p.getStock());                 // Correct stock
+    @DisplayName("stores valid constructor values")
+    void constructor_validValues_storesFields() {
+        Product product = new Product(1, "Lamp", 10.0, 5);
+
+        assertAll(
+                () -> assertNotNull(product),
+                () -> assertEquals(1, product.getId()),
+                () -> assertEquals("Lamp", product.getName()),
+                () -> assertEquals(10.0, product.getPrice(), TOLERANCE),
+                () -> assertEquals(5, product.getStock()));
     }
 
-    /** Product name cannot be null. */
     @Test
-    public void nullName_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> new Product(1, null, 10, 5));
+    @DisplayName("accepts zero price and zero stock")
+    void constructor_zeroPriceAndStock_isAllowed() {
+        Product product = new Product(1, "Free sample", 0, 0);
+
+        assertAll(
+                () -> assertEquals(0, product.getPrice(), TOLERANCE),
+                () -> assertEquals(0, product.getStock()));
     }
 
-    /** Product name cannot be empty or whitespace. */
     @Test
-    public void emptyName_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> new Product(1, "   ", 10, 5));
+    @DisplayName("rejects a null name")
+    void constructor_nullName_throwsException() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Product(1, null, 10, 5));
     }
 
-    /** Price cannot be negative. */
     @Test
-    public void negativePrice_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> new Product(1, "TV", -5, 2));
+    @DisplayName("rejects a blank name")
+    void constructor_blankName_throwsException() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Product(1, "   ", 10, 5));
     }
 
-    /** Stock cannot be negative. */
     @Test
-    public void negativeStock_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> new Product(1, "TV", 5, -1));
+    @DisplayName("rejects a negative price")
+    void constructor_negativePrice_throwsException() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Product(1, "TV", -5, 2));
     }
 
-    // --- Stock operation tests ---
-
-    /** Reducing stock by a valid amount decreases available stock. */
     @Test
-    public void reduceStock_validAmount_decreasesStock() {
-        Product p = new Product(1, "TV", 10, 5);
-        p.reduceStock(3);
-        assertEquals(2, p.getStock()); // 5 - 3 = 2
+    @DisplayName("rejects negative stock")
+    void constructor_negativeStock_throwsException() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Product(1, "TV", 5, -1));
     }
 
-    /** Reducing stock beyond available amount throws exception. */
     @Test
-    public void reduceStock_moreThanAvailable_throws() {
-        Product p = new Product(1, "TV", 10, 1);
-        assertThrows(IllegalArgumentException.class, () -> p.reduceStock(2));
+    @DisplayName("updates the price")
+    void setPrice_validPrice_updatesValue() {
+        Product product = new Product(1, "Pen", 1.0, 10);
+
+        product.setPrice(2.5);
+
+        assertEquals(2.5, product.getPrice(), TOLERANCE);
     }
 
-    /** Reducing stock with a negative number is invalid. */
     @Test
-    public void reduceStock_negativeAmount_throws() {
-        Product p = new Product(1, "TV", 10, 5);
-        assertThrows(IllegalArgumentException.class, () -> p.reduceStock(-1));
+    @DisplayName("rejects a negative updated price")
+    void setPrice_negativePrice_throwsException() {
+        Product product = new Product(1, "Pen", 1.0, 10);
+
+        assertThrows(IllegalArgumentException.class, () -> product.setPrice(-3));
     }
 
-    /** Increasing stock by a valid amount should increase it correctly. */
     @Test
-    public void increaseStock_valid_increasesValue() {
-        Product p = new Product(1, "Book", 5, 5);
-        p.increaseStock(3);
-        assertEquals(8, p.getStock());
+    @DisplayName("reduces stock by a valid amount")
+    void reduceStock_validAmount_decreasesStock() {
+        Product product = new Product(1, "TV", 10, 5);
+
+        product.reduceStock(3);
+
+        assertEquals(2, product.getStock());
     }
 
-    /** Increasing stock by a negative number should throw an error. */
     @Test
-    public void increaseStock_negative_throws() {
-        Product p = new Product(1, "Book", 5, 5);
-        assertThrows(IllegalArgumentException.class, () -> p.increaseStock(-2));
+    @DisplayName("can reduce stock exactly to zero")
+    void reduceStock_fullAmount_setsStockToZero() {
+        Product product = new Product(1, "Mouse", 20, 2);
+
+        product.reduceStock(2);
+
+        assertEquals(0, product.getStock());
     }
 
-    // --- Price setter and validations ---
-
-    /** Setting a new valid price should update the price field. */
     @Test
-    public void setPrice_valid_updatesPrice() {
-        Product p = new Product(1, "Pen", 1.0, 10);
-        p.setPrice(2.5);
-        assertEquals(2.5, p.getPrice(), 0.001);
+    @DisplayName("rejects reducing more stock than available")
+    void reduceStock_excessiveAmount_throwsWithoutChangingStock() {
+        Product product = new Product(1, "Cable", 2, 1);
+
+        assertThrows(IllegalArgumentException.class, () -> product.reduceStock(2));
+        assertEquals(1, product.getStock());
     }
 
-    /** Setting a negative price should fail validation. */
     @Test
-    public void setPrice_negative_throws() {
-        Product p = new Product(1, "Pen", 1.0, 10);
-        assertThrows(IllegalArgumentException.class, () -> p.setPrice(-3));
+    @DisplayName("rejects a negative stock reduction")
+    void reduceStock_negativeAmount_throwsException() {
+        Product product = new Product(1, "TV", 10, 5);
+
+        assertThrows(IllegalArgumentException.class, () -> product.reduceStock(-1));
     }
 
-    // --- Miscellaneous / boundary tests ---
-
-    /** The toString() method should never return null. */
     @Test
-    public void toString_notNull() {
-        Product p = new Product(1, "Phone", 100, 2);
-        assertNotNull(p.toString());
+    @DisplayName("increases stock by a valid amount")
+    void increaseStock_validAmount_increasesStock() {
+        Product product = new Product(1, "Book", 5, 5);
+
+        product.increaseStock(3);
+
+        assertEquals(8, product.getStock());
     }
 
-    /** Reducing stock to zero should set stock exactly to zero. */
     @Test
-    public void reduceToZero_stockBecomesZero() {
-        Product p = new Product(1, "Mouse", 20, 2);
-        p.reduceStock(2);
-        assertEquals(0, p.getStock());
+    @DisplayName("rejects a negative stock increase")
+    void increaseStock_negativeAmount_throwsException() {
+        Product product = new Product(1, "Book", 5, 5);
+
+        assertThrows(IllegalArgumentException.class, () -> product.increaseStock(-2));
     }
 
-    /** Product with zero stock can exist (allowed boundary). */
     @Test
-    public void zeroStock_creationAllowed() {
-        Product p = new Product(1, "Game", 50, 0);
-        assertEquals(0, p.getStock());
-    }
-
-    /** Product with zero price can exist (e.g., free item). */
-    @Test
-    public void zeroPrice_creationAllowed() {
-        Product p = new Product(1, "Gift", 0, 5);
-        assertEquals(0, p.getPrice(), 0.001);
-    }
-
-    /** ID should match the constructor argument. */
-    @Test
-    public void getId_returnsCorrectValue() {
-        Product p = new Product(99, "X", 1.0, 1);
-        assertEquals(99, p.getId());
-    }
-
-    /** After invalid reduction, stock should still remain non-negative. */
-    @Test
-    public void stockNeverNegativeAfterOperations() {
-        Product p = new Product(1, "Cable", 2, 1);
-        assertThrows(IllegalArgumentException.class, () -> p.reduceStock(2));
-        assertTrue(p.getStock() >= 0);
-    }
-
-    /** Reducing when stock = 0 should throw an exception. */
-    @Test
-    public void reduceFromZero_throws() {
-        Product p = new Product(1, "Item", 1, 0);
-        assertThrows(IllegalArgumentException.class, () -> p.reduceStock(1));
-    }
-    @Test
-    public void validProduct_doesNotThrow() {
+    @DisplayName("creates a valid product without throwing")
+    void constructor_validValues_doesNotThrow() {
         assertDoesNotThrow(() -> new Product(1, "Valid", 1.0, 1));
     }
 
     @Test
-    public void toString_containsProductName() {
-        Product p = new Product(1, "Lamp", 5.0, 2);
-        assertTrue(p.toString().contains("Lamp"));
+    @DisplayName("includes useful details in its text representation")
+    void toString_containsProductDetails() {
+        Product product = new Product(7, "Lamp", 5.0, 2);
+        String text = product.toString();
+
+        assertAll(
+                () -> assertNotNull(text),
+                () -> assertTrue(text.contains("Lamp")),
+                () -> assertTrue(text.contains("id=7")),
+                () -> assertTrue(text.contains("stock=2")));
     }
 }
