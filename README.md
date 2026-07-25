@@ -169,6 +169,4 @@ Install a PlantUML extension and Graphviz when required by that extension, or us
 - Add mutation testing with PIT.
 - Add continuous integration with GitHub Actions.
 
-## License
 
-No license was included in the original project. Add a license file before distributing or reusing the code publicly.
